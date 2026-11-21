@@ -1,0 +1,38 @@
+{
+  "name": "@projectflow/server",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "test": "npm run build && node --test",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "postinstall": "prisma generate --schema=./prisma/schema.prisma",
+    "db:generate": "prisma generate --schema=./prisma/schema.prisma",
+    "db:migrate": "prisma migrate dev --name stage6_workspace_invites --schema=./prisma/schema.prisma",
+    "db:studio": "prisma studio --schema=./prisma/schema.prisma",
+    "db:check": "tsx scripts/verify-db.ts",
+    "auth:check": "tsx scripts/verify-auth.ts",
+    "projects:check": "tsx scripts/verify-projects.ts",
+    "tasks:check": "tsx scripts/verify-tasks.ts",
+    "team:check": "tsx scripts/verify-team.ts",
+    "quality:check": "tsx scripts/verify-quality.ts",
+    "db:deploy": "prisma migrate deploy --schema=./prisma/schema.prisma",
+    "demo:check": "tsx scripts/verify-demo.ts"
+  },
+  "dependencies": {
+    "express": "^5.3.0",
+    "@prisma/client": "6.19.3",
+    "dotenv": "^16.6.1",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "~5.9.3",
+    "prisma": "6.19.3"
+  }
+}

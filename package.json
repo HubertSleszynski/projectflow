@@ -1,0 +1,35 @@
+{
+  "name": "projectflow",
+  "version": "1.1.0",
+  "private": true,
+  "description": "ProjectFlow \u2014 collaborative project and task management",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev --workspace @projectflow/server",
+    "dev:web": "npm run dev --workspace @projectflow/client",
+    "build": "npm run build --workspace @projectflow/server && npm run build --workspace @projectflow/client",
+    "test:api": "npm run test --workspace @projectflow/server",
+    "typecheck": "npm run typecheck --workspace @projectflow/server && npm run typecheck --workspace @projectflow/client",
+    "db:up": "docker compose up -d --wait postgres",
+    "db:down": "docker compose down",
+    "db:generate": "npm run db:generate --workspace @projectflow/server",
+    "db:migrate": "npm run db:migrate --workspace @projectflow/server",
+    "db:studio": "npm run db:studio --workspace @projectflow/server",
+    "db:check": "npm run db:check --workspace @projectflow/server",
+    "auth:check": "npm run auth:check --workspace @projectflow/server",
+    "projects:check": "npm run projects:check --workspace @projectflow/server",
+    "tasks:check": "npm run tasks:check --workspace @projectflow/server",
+    "team:check": "npm run team:check --workspace @projectflow/server",
+    "quality:check": "npm run quality:check --workspace @projectflow/server",
+    "audit:prod": "npm audit --omit=dev",
+    "db:deploy": "npm run db:deploy --workspace @projectflow/server",
+    "verify:all": "npm run typecheck && npm run test:api && npm run auth:check && npm run projects:check && npm run tasks:check && npm run team:check && npm run quality:check && npm run demo:check",
+    "demo:check": "npm run demo:check --workspace @projectflow/server"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

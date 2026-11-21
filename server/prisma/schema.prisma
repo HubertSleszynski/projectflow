@@ -1,0 +1,142 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum ProjectStatus {
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  ARCHIVED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  IN_REVIEW
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model User {
+  id            String            @id @default(cuid())
+  name          String
+  email         String            @unique
+  passwordHash  String?
+  isDemo        Boolean           @default(false)
+  demoExpiresAt DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  memberships   WorkspaceMember[]
+  sessions      Session[]
+  assignedTasks Task[]            @relation("TaskAssignee")
+
+  @@index([isDemo, demoExpiresAt])
+}
+
+model Workspace {
+  id        String            @id @default(cuid())
+  name      String
+  slug      String            @unique
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  members   WorkspaceMember[]
+  invitations WorkspaceInvitation[]
+  projects  Project[]
+}
+
+model WorkspaceMember {
+  workspaceId String
+  userId      String
+  role        WorkspaceRole @default(MEMBER)
+  joinedAt    DateTime      @default(now())
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([workspaceId, userId])
+  @@index([userId])
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  workspaceId String
+  key         String
+  name        String
+  description String?
+  status      ProjectStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  tasks       Task[]
+
+  @@unique([workspaceId, key])
+  @@index([workspaceId, status])
+}
+
+model Task {
+  id          String       @id @default(cuid())
+  projectId   String
+  code        String       @unique
+  title       String
+  description String?
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
+  position    Int          @default(0)
+  dueDate     DateTime?
+  assigneeId  String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee    User?        @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, status, position])
+  @@index([assigneeId])
+}
+
+// Only a SHA-256 hash of a cryptographically random session token is stored.
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+
+// Invitation tokens are never stored in plain text. Codes expire after 7 days.
+model WorkspaceInvitation {
+  id          String        @id @default(cuid())
+  workspaceId String
+  email       String
+  role        WorkspaceRole @default(MEMBER)
+  tokenHash   String        @unique
+  createdById String
+  createdAt   DateTime      @default(now())
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  revokedAt   DateTime?
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, email])
+  @@index([expiresAt])
+}

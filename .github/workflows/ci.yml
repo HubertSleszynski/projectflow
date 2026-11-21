@@ -1,0 +1,53 @@
+name: ProjectFlow CI
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: projectflow
+          POSTGRES_PASSWORD: projectflow_local_dev
+          POSTGRES_DB: projectflow
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U projectflow -d projectflow"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Test environment
+        run: cp server/.env.example server/.env
+      - name: Generate Prisma Client
+        run: npm run db:generate
+      - name: Apply migrations
+        run: npm run db:deploy
+      - name: Typecheck
+        run: npm run typecheck
+      - name: API unit tests
+        run: npm run test:api
+      - name: Authentication and workspace integration tests
+        run: |
+          npm run auth:check
+          npm run projects:check
+          npm run tasks:check
+          npm run team:check
+          npm run quality:check
+          npm run demo:check
+      - name: Production build
+        run: npm run build
+      - name: Dependency advisory report (known Prisma tooling issue)
+        continue-on-error: true
+        run: npm audit --omit=dev --audit-level=high

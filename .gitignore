@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Next.js
+client/.next/
+client/out/
+*.tsbuildinfo
+
+# Build output
+server/dist/
+
+# Secrets and local config
+.env
+.env.*
+!.env.example
+!.env.local.example
+**/.env
+**/.env.local
+**/.env.production.local
+
+# Misc
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+
+# Production and temporary files
+.env.production
+.env.production.*
+!.env.production.example
+*.zip
+*.bak
+coverage/
+
+# Backups
+backups/

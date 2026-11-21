@@ -1,0 +1,22 @@
+FROM node:24-bookworm-slim AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY client/package.json ./client/package.json
+COPY server/package.json ./server/package.json
+RUN npm ci --ignore-scripts --no-audit --no-fund
+COPY client ./client
+ARG API_PROXY_TARGET=http://api:3001
+ENV API_PROXY_TARGET=${API_PROXY_TARGET}
+RUN npm run build --workspace @projectflow/client
+
+FROM node:24-bookworm-slim AS runner
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+WORKDIR /app
+# With outputFileTracingRoot set to the monorepo, entrypoint is client/server.js.
+COPY --from=build /app/client/.next/standalone ./
+COPY --from=build /app/client/.next/static ./client/.next/static
+USER node
+EXPOSE 3000
+CMD ["node", "client/server.js"]
