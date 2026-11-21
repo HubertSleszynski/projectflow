@@ -1,83 +1,101 @@
 # ProjectFlow
 
-A focused workspace for planning projects, coordinating tasks and keeping teams aligned. Built with a lightweight interface, private workspaces, a Kanban board and clear project progress.
+A collaborative workspace for managing projects, organizing tasks, and keeping teams aligned.
 
-> **Status:** v1.1 source release. The application runs locally; a public instance is not included with this repository. See `DEPLOYMENT.md` for self-hosted deployment.
+ProjectFlow combines project tracking, a drag-and-drop Kanban board, team workspaces, and role-based access in a single application. Visitors can explore the product without creating an account using an isolated demo workspace.
 
-## What you can do
+## Features
 
-- Create, update, archive and delete projects, with progress and due-date summaries.
-- Organize tasks across **To do**, **In progress**, **In review** and **Done**. Set priorities, due dates and assignees; reorder by dragging.
-- Filter tasks and see work assigned to you.
-- Invite teammates to private workspaces using single-use, email-bound invitation codes and manage Owner, Admin and Member permissions.
-- Sign in to a real account or use **Explore demo workspace** to try an isolated, prepopulated workspace without registration.
+- **Project management** — create, edit, archive, restore, and delete projects.
+- **Kanban boards** — move tasks between To do, In progress, In review, and Done; reorder tasks with drag and drop.
+- **Task tracking** — priorities, due dates, assignees, and a personal **My tasks** view.
+- **Team collaboration** — private workspaces, invitation codes, and Owner / Admin / Member roles.
+- **Authentication** — password hashing, database-backed sessions, and HttpOnly cookies.
+- **Instant demo** — explore three fictional event-management projects without registration. Each visitor gets a separate temporary workspace.
 
-### Visitor demo
+## Tech stack
 
-Click **Explore demo workspace** on the sign-in page. The server creates a unique temporary account with a private workspace containing three fictional business projects and realistic tasks. Visitors can create and edit projects and tasks. Demo sessions expire after **12 hours**; the server removes expired demo data on subsequent demo requests. Invitations and workspace switching are disabled in demos. A global active-session cap, an IP-based demo creation limit and smaller project/task quotas reduce abuse.
-
-The optional **Add sample project** action remains available to regular workspace owners and admins. It does not overwrite ordinary work.
-
-## Stack
-
-| Area | Technology |
+| Layer | Technologies |
 | --- | --- |
-| Web | Next.js 16, React 19, TypeScript, CSS |
-| API | Express 5, TypeScript, Zod |
-| Data | PostgreSQL 16, Prisma 6 |
-| Authentication | Server-side sessions, HttpOnly cookies, scrypt password hashing |
-| Tooling | npm workspaces, Node 22+, Docker Compose, GitHub Actions |
-| Deployment files | Docker, Caddy, HTTPS |
+| Frontend | Next.js 16, React 19, TypeScript, CSS |
+| Backend | Express 5, TypeScript, Zod |
+| Database | PostgreSQL 16, Prisma 6 |
+| Tooling | npm workspaces, Docker Compose, GitHub Actions |
 
-## Start locally
+The frontend and API are separate applications within the same repository. The browser uses a same-origin `/api` path, which Next.js proxies to Express.
 
-Prerequisites: Node.js 22+, npm, Docker Desktop/Engine. On Windows with Git Bash, use `npm.cmd` instead of `npm`.
+## Getting started
 
-```bash
-# Open Docker Desktop first (Windows)
-docker compose up -d --wait postgres
+**Requirements:** Node.js 22+, npm, and Docker Desktop (or Docker Engine with Compose).
 
-# First install or after downloading a new release
-npm install
+1. Clone the repository and install dependencies:
 
-# Existing projects: KEEP server/.env from the old version.
-# New clone: copy server/.env.example to server/.env and configure DATABASE_URL.
-npm run db:generate
-npm run db:deploy
+   ```bash
+   git clone https://github.com/HubertSleszynski/projectflow.git
+   cd projectflow
+   npm install
+   ```
 
-# In terminal 1
-npm run dev:api
-# In terminal 2
-npm run dev:web
-```
+2. Create the local backend configuration:
 
-Open **http://localhost:3000**. Register an account or use the visitor demo. If the database is already in use, `db:deploy` applies only pending migrations; do not reset the database. Windows-specific guidance is in `START_HERE_WINDOWS.md`.
+   ```bash
+   cp server/.env.example server/.env
+   ```
 
-### Check before committing
+   The example configuration targets the PostgreSQL container on port `5433`. Keep your real `.env` files out of version control.
+
+3. Start PostgreSQL and apply the database migrations:
+
+   ```bash
+   docker compose up -d --wait postgres
+   npm run db:generate
+   npm run db:deploy
+   ```
+
+4. Start the application in two separate terminals:
+
+   ```bash
+   # Terminal 1 — Express API
+   npm run dev:api
+   ```
+
+   ```bash
+   # Terminal 2 — Next.js frontend
+   npm run dev:web
+   ```
+
+Open **http://localhost:3000**. Sign up for an account or select **Explore demo workspace**.
+
+> **Windows / Git Bash:** Use `npm.cmd` in place of `npm` if your shell does not resolve the npm command correctly.
+
+## Testing
+
+With PostgreSQL running and migrations applied:
 
 ```bash
 npm run verify:all
 npm run build
 ```
 
-`verify:all` runs TypeScript, API tests and live integration tests for authentication, projects, tasks, team invitations, sample content and demo isolation. It needs a running PostgreSQL container and the applied migrations. The integration scripts remove their temporary QA data.
+The verification suite covers TypeScript, API unit tests, authentication, workspace isolation, projects, tasks, invitations, and demo access. Integration tests create and remove temporary test data.
 
-### Repository layout
+## Project structure
 
 ```text
-client/                  Next.js interface and styles
-server/src/              Express API, routes, session logic and demo service
-server/prisma/           Schema and committed migrations
-server/scripts/          Live verification scripts
-.github/workflows/ci.yml CI tests and advisory report
-compose.prod.yml         Self-hosted production topology
-deploy/Caddyfile          HTTPS reverse proxy
+client/                   Next.js frontend
+server/src/               Express API and business logic
+server/prisma/            Database schema and migrations
+server/scripts/           Integration verification scripts
+.github/workflows/        Continuous integration
+docker-compose.yml        Local PostgreSQL service
 ```
 
-## Security and deployment
+## Demo and security notes
 
-Credentials are **never** included in the source archive. Keep `server/.env` and `.env.production` out of Git and screenshots. API access checks are enforced on the server, not just by hiding buttons. Demo projects are isolated from real accounts and other demos. The supplied production API image omits the Prisma CLI; a separate migration image runs schema migrations.
+The demo creates a private, temporary workspace with fictional event-management data. Demo sessions expire after 12 hours, and invitations are unavailable in demo mode. Cleanup runs when subsequent demo requests arrive, rather than on a background schedule.
 
-The dependency tree may still report a **high-severity `deepmerge-ts` advisory inherited through Prisma 6 tooling**. It is documented in `SECURITY.md`; do not treat passing application tests as proof the advisory is resolved. Before public deployment, assess the runtime images, apply available upstream fixes and add infrastructure abuse controls.
+ProjectFlow is a portfolio project. Before exposing it publicly, review dependency advisories, serverless-specific rate limiting, session behavior, database connection limits, and abuse protection. Do not use real customer or sensitive data in the public demo.
 
-Refer to `SECURITY.md` and `DEPLOYMENT.md` for limitations, TLS setup, migrations and backups. This is a portfolio-scale application, not a production security certification.
+## Deployment
+
+A public deployment is being prepared. The intended setup is **Vercel for the frontend and API** with **Neon PostgreSQL**. Deployment configuration and the live URL will be added after production verification.
