@@ -1,32 +1,91 @@
 # ProjectFlow
 
-A collaborative workspace for managing projects, organizing tasks, and keeping teams aligned.
+**A collaborative workspace for projects, tasks, and teams.**
 
-ProjectFlow combines project tracking, a drag-and-drop Kanban board, team workspaces, and role-based access in a single application. Visitors can explore the product without creating an account using an isolated demo workspace.
+ProjectFlow brings project planning, task tracking, and team collaboration into one focused interface. Organize work on a Kanban board, manage multiple projects, and keep track of what needs attention — without switching between tools.
+
+**[Live Application](https://projectflow-client-three.vercel.app/)** · **[Source Code](https://github.com/HubertSleszynski/projectflow)**
+
+> **Try it without signing up:** Open the live application and select **Explore demo workspace**. You'll get a private, prepopulated workspace where you can explore the features and make changes.
+
+## Screenshots
+
+A look inside the **demo workspace**, populated with fictional projects and tasks. You can explore these views yourself using the [live demo](https://projectflow-client-three.vercel.app/).
+
+### Workspace overview
+
+Monitor project activity, completion rates, and the work that needs attention.
+
+![ProjectFlow workspace overview showing project statistics and recent projects](docs/screenshots/overview.png)
+
+### Projects
+
+Keep projects organized, track their status, and find what your team is working on.
+
+![ProjectFlow projects page showing sample projects and their progress](docs/screenshots/projects.png)
+
+### My tasks
+
+See assigned tasks across projects, including priorities, due dates, and current status.
+
+![ProjectFlow My tasks view showing assigned tasks, priorities, and statuses](docs/screenshots/my-tasks.png)
+
+### Team workspace
+
+Manage workspace members and access permissions in one place.
+
+![ProjectFlow team workspace showing members and access information](docs/screenshots/team.png)
 
 ## Features
 
-- **Project management** — create, edit, archive, restore, and delete projects.
-- **Kanban boards** — move tasks between To do, In progress, In review, and Done; reorder tasks with drag and drop.
-- **Task tracking** — priorities, due dates, assignees, and a personal **My tasks** view.
-- **Team collaboration** — private workspaces, invitation codes, and Owner / Admin / Member roles.
-- **Authentication** — password hashing, database-backed sessions, and HttpOnly cookies.
-- **Instant demo** — explore three fictional event-management projects without registration. Each visitor gets a separate temporary workspace.
+- **Project management** — create and edit projects, track their status, and archive or delete completed work.
+- **Kanban boards** — organize tasks across To do, In progress, In review, and Done, with drag-and-drop movement and ordering.
+- **Task details** — assign teammates, set priorities and due dates, and filter tasks to find relevant work.
+- **My Tasks** — view work assigned to you across projects.
+- **Team workspaces** — collaborate in separate workspaces with Owner, Admin, and Member permissions.
+- **Invitations** — invite teammates using email-bound, single-use invitation codes.
+- **Authentication** — account registration, sign-in, and database-backed sessions.
+- **Guest demo** — explore an isolated workspace with sample projects, without creating an account.
 
-## Tech stack
+## Tech Stack
 
-| Layer | Technologies |
+| Area | Technologies |
 | --- | --- |
 | Frontend | Next.js 16, React 19, TypeScript, CSS |
-| Backend | Express 5, TypeScript, Zod |
-| Database | PostgreSQL 16, Prisma 6 |
-| Tooling | npm workspaces, Docker Compose, GitHub Actions |
+| Backend | Node.js, Express 5, TypeScript, Zod |
+| Database | PostgreSQL, Prisma ORM |
+| Authentication | Server-side sessions, HttpOnly cookies, scrypt password hashing |
+| Deployment | Vercel (frontend and API), Neon (PostgreSQL) |
+| Development & CI | npm workspaces, Docker Compose, GitHub Actions |
 
-The frontend and API are separate applications within the same repository. The browser uses a same-origin `/api` path, which Next.js proxies to Express.
+## Architecture
 
-## Getting started
+```text
+Browser
+   |
+   v
+Next.js frontend (Vercel)
+   |  /api/* — same-origin proxy
+   v
+Express API (Vercel)
+   |
+   v
+Prisma ORM
+   |
+   v
+Neon PostgreSQL
+```
 
-**Requirements:** Node.js 22+, npm, and Docker Desktop (or Docker Engine with Compose).
+The frontend and API are deployed separately. Next.js forwards `/api` requests to Express, allowing the browser to use a single origin for the application and its session cookies. Authorization and workspace access checks are enforced by the API.
+
+## Getting Started
+
+### Requirements
+
+- Node.js 22 or later and npm
+- Docker Desktop or Docker Engine with Docker Compose
+
+### Local setup
 
 1. Clone the repository and install dependencies:
 
@@ -36,15 +95,15 @@ The frontend and API are separate applications within the same repository. The b
    npm install
    ```
 
-2. Create the local backend configuration:
+2. Create the backend environment file:
 
    ```bash
    cp server/.env.example server/.env
    ```
 
-   The example configuration targets the PostgreSQL container on port `5433`. Keep your real `.env` files out of version control.
+   The example points to the local PostgreSQL container on port `5433` and sets `APP_ORIGIN` to `http://localhost:3000`.
 
-3. Start PostgreSQL and apply the database migrations:
+3. Start PostgreSQL and prepare the database:
 
    ```bash
    docker compose up -d --wait postgres
@@ -52,50 +111,61 @@ The frontend and API are separate applications within the same repository. The b
    npm run db:deploy
    ```
 
-4. Start the application in two separate terminals:
+4. Start the API and frontend in **separate terminals**:
 
    ```bash
-   # Terminal 1 — Express API
+   # Terminal 1
    npm run dev:api
    ```
 
    ```bash
-   # Terminal 2 — Next.js frontend
+   # Terminal 2
    npm run dev:web
    ```
 
-Open **http://localhost:3000**. Sign up for an account or select **Explore demo workspace**.
+Open **http://localhost:3000** and create an account or explore the demo.
 
-> **Windows / Git Bash:** Use `npm.cmd` in place of `npm` if your shell does not resolve the npm command correctly.
+> **Windows / Git Bash:** If `npm` does not resolve correctly, use `npm.cmd` instead. Never commit real `.env` files or database credentials.
 
 ## Testing
 
-With PostgreSQL running and migrations applied:
+With the local database running and migrations applied:
 
 ```bash
 npm run verify:all
 npm run build
 ```
 
-The verification suite covers TypeScript, API unit tests, authentication, workspace isolation, projects, tasks, invitations, and demo access. Integration tests create and remove temporary test data.
+`verify:all` runs TypeScript checks, API unit tests, and integration checks covering authentication, projects, tasks, teams, and demo isolation. GitHub Actions also runs the verification workflow on pushes and pull requests.
 
-## Project structure
+## Project Structure
 
 ```text
-client/                   Next.js frontend
-server/src/               Express API and business logic
-server/prisma/            Database schema and migrations
-server/scripts/           Integration verification scripts
-.github/workflows/        Continuous integration
+client/                  Next.js application and UI components
+server/src/              Express API, authentication, and business logic
+server/prisma/           Prisma schema and database migrations
+server/scripts/          Integration verification scripts
+.github/workflows/       CI configuration
 docker-compose.yml        Local PostgreSQL service
 ```
 
-## Demo and security notes
-
-The demo creates a private, temporary workspace with fictional event-management data. Demo sessions expire after 12 hours, and invitations are unavailable in demo mode. Cleanup runs when subsequent demo requests arrive, rather than on a background schedule.
-
-ProjectFlow is a portfolio project. Before exposing it publicly, review dependency advisories, serverless-specific rate limiting, session behavior, database connection limits, and abuse protection. Do not use real customer or sensitive data in the public demo.
-
 ## Deployment
 
-A public deployment is being prepared. The intended setup is **Vercel for the frontend and API** with **Neon PostgreSQL**. Deployment configuration and the live URL will be added after production verification.
+The live application uses two Vercel projects connected to this repository:
+
+| Service | Root directory | Required environment variables |
+| --- | --- | --- |
+| Frontend (Next.js) | `client` | `API_PROXY_TARGET` — public API origin |
+| Backend (Express) | `server` | `DATABASE_URL` — Neon connection string; `APP_ORIGIN` — frontend origin |
+
+The PostgreSQL database is hosted on **Neon**. Apply Prisma migrations with a **direct database connection**; use the appropriate pooled connection for the deployed API. Environment variables are configured in the hosting dashboard, not committed to Git.
+
+## Notes
+
+ProjectFlow is a portfolio application intended to demonstrate full-stack development and collaboration workflows. Demo workspaces are isolated from registered accounts and expire after 12 hours. Before using the application for real customer data, additional production hardening is required, including shared rate limiting for serverless deployments and a review of dependency advisories.
+
+## Author
+
+**Hubert Śleszyński** — Full Stack Developer
+
+[Portfolio](https://hrs-dev.netlify.app/) · [LinkedIn](https://www.linkedin.com/in/hubertsleszynski/) · [GitHub](https://github.com/HubertSleszynski)
